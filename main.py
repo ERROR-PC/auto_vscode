@@ -5,7 +5,7 @@ from subprocess import CalledProcessError, run as run_subprocess
 import sys
 
 from color_codes import ColorCode
-from funcs import errprint, install_app
+from funcs import errprint, install_app, yes_no_input
 from constants import WINGET_ID
 
 # is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
@@ -111,6 +111,10 @@ if install_vscode:
     print("\n")
 
 if install_gcc:
+    print(f"{ColorCode.GREEN}Begining installation of gcc/g++{ColorCode.END}")
+    answer = yes_no_input("Do you want to specify gcc/g++ install location", "3ayez te7aded gcc/g++ hynzl fen?")
+    if answer is True:
+        filedialog.askopendirectory()
     print(f"{ColorCode.GREEN}mingw64/gcc/g++ is going to be installed now{ColorCode.END}")
     print("Installing gcc/g++...")
     install_app("MSYS2.MSYS2")
