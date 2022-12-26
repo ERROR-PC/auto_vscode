@@ -1,7 +1,7 @@
 """Functions used by main"""
 
-from subprocess import run as run_subprocess, CompletedProcess
-from sys import stderr
+from subprocess import run as subprocess_run, CompletedProcess
+from sys import stderr, exit as sys_exit
 from constants import WINGET_NO_INTERNET
 from color_codes import ColorCode
 
@@ -15,11 +15,14 @@ def internet_check(p: CompletedProcess):
     """If the process failed because of an internet connection, it will tell the user"""
     if p.returncode == WINGET_NO_INTERNET:
         errprint(f"{ColorCode.RED}Your internet = 5ara{ColorCode.END}")
+        errprint("Program is aborting")
+        subprocess_run(["pause"], shell=True, check=True)
+        sys_exit(0)
 
 
 def install_app(app_id: str):
     """Installs the given application"""
-    p = run_subprocess(
+    p = subprocess_run(
         [
             "winget",
             "install",

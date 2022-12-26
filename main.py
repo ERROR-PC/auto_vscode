@@ -1,7 +1,7 @@
 """A program to install vscode for python and C/C++"""
 
 from tkinter import messagebox, filedialog, Tk
-from subprocess import CalledProcessError, run as run_subprocess
+from subprocess import CalledProcessError, run as subprocess_run
 import sys
 import os
 
@@ -19,7 +19,7 @@ _temp.withdraw()
 
 # Make sure arabic language works by switching to unicode characters
 try:
-    run_subprocess(["winget"], shell=True, check=True, capture_output=True)
+    subprocess_run(["winget"], shell=True, check=True, capture_output=True)
 except (CalledProcessError, FileNotFoundError):
     errprint(
         f"{ColorCode.RED}\aYou have an old version of 'app installer'{ColorCode.END}"
@@ -32,7 +32,7 @@ except (CalledProcessError, FileNotFoundError):
 
     if answer is True:
         # launch ms store to winget
-        run_subprocess(
+        subprocess_run(
             ["start", f"ms-windows-store://pdp/?ProductId={WINGET_ID}"],
             check=True,
             shell=True,
@@ -42,7 +42,7 @@ except (CalledProcessError, FileNotFoundError):
 # check python installation
 # first assume it is in PATH
 try:
-    p = run_subprocess(["py", "--list"], check=True, capture_output=True, text=True)
+    p = subprocess_run(["py", "--list"], check=True, capture_output=True, text=True)
     for line in p.stdout.splitlines():
         # 5th char is the major version number
         if line[4] == "3":
@@ -56,7 +56,7 @@ except (CalledProcessError, FileNotFoundError):
 # NEEDS TESTING ----------------------------------------------------------------!!!
 if install_python:
     try:
-        p = run_subprocess(
+        p = subprocess_run(
             ["where", "python"],
             shell=True,
             check=True,
@@ -77,7 +77,7 @@ if install_python:
 
             errprint("\nProgram is unable to decide which one to use")
             errprint("Aborting")
-            run_subprocess(["pause"], shell=True, check=True)
+            subprocess_run(["pause"], shell=True, check=True)
             sys.exit(0)
 
     except (CalledProcessError, FileNotFoundError):
@@ -86,14 +86,14 @@ if install_python:
 # check vscode installation
 try:
     install_vscode = False
-    run_subprocess(["code", "-h"], shell=True, check=True, capture_output=True)
+    subprocess_run(["code", "-h"], shell=True, check=True, capture_output=True)
 except (CalledProcessError, FileNotFoundError):  # vscode not installed
     install_vscode = True
 
 # check gcc installation
 try:
     install_gcc = False
-    run_subprocess(["gccsaaad", "--version"], check=True, capture_output=True)
+    subprocess_run(["gccsaaad", "--version"], check=True, capture_output=True)
 except (CalledProcessError, FileNotFoundError):  # gcc not installed
     install_gcc = True
 
@@ -131,15 +131,18 @@ if install_gcc:
     )
     if answer is True:
         gcc_path = filedialog.askdirectory(
-            title="gcc/g++ install location",
-            mustexist=True
+            title="gcc/g++ install location", mustexist=False
         )
     else:
         gcc_path = os.path.join("c:", "msys64")
 
-    print("Checking latest version of gcc/g++ (this could take a while)...", end='', flush=True)
+    print(
+        "Checking latest version of gcc/g++ (this could take a while)...",
+        end="",
+        flush=True,
+    )
     with SpinningCursor():
-        p = run_subprocess(
+        p = subprocess_run(
             ["winget", "show", "--id", "MSYS2.MSYS2", "-e", "-s", "winget"],
             check=False,
             shell=True,
@@ -147,14 +150,38 @@ if install_gcc:
             text=True,
         )
 
-        internet_check(p)
+    internet_check(p)
+    url_start = p.stdout.find("Download Url: ")
+    # jump to link
+    url_start += 14
+
+    url_end = p.stdout.find("\n", url_start)
+    gcc_url = p.stdout[url_start:url_end]
 
     print(
         f"{ColorCode.GREEN}mingw64/gcc/g++ is going to be installed now{ColorCode.END}"
     )
     print("Installing gcc/g++...")
-    # install_app("MSYS2.MSYS2")
-    print("\n")
+    # can happen, for example: default path
+    if not os.path.exists(gcc_path):
+        os.mkdir(gcc_path)
+
+    gcc_path = os.path.join(gcc_path, gcc_url.split("/")[-1])
+    # use iwr from powershell
+    subprocess_run(
+        [
+            "pwsh",
+            "-Command",
+            "iwr",
+            gcc_url,
+            "-OutFile",
+            gcc_path,
+        ],
+        shell=True,
+        check=False,
+    )
+
+    print(f"{ColorCode.GREEN2}Success! gcc has been installed{ColorCode.END}\n")
 
 print("Program finished.")
-run_subprocess(["pause"], shell=True, check=True)
+subprocess_run(["pause"], shell=True, check=True)
