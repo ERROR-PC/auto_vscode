@@ -135,7 +135,7 @@ if install_vscode is True:
         if answer is True:
             vscode_path = filedialog.askdirectory(
                 title="VScode install location", mustexist=False
-            )
+            ).replace("/", "\\")
 
             if vscode_path == "":
                 print(
@@ -168,7 +168,7 @@ if install_gcc is True:
             while not done:
                 gcc_path = filedialog.askdirectory(
                     title="gcc/g++ install location", mustexist=False
-                )
+                ).replace("/", "\\")
 
                 if " " in gcc_path:
                     errprint(
@@ -196,7 +196,7 @@ if install_python is True:
         if answer is True:
             python_path = filedialog.askdirectory(
                 title="Python 3.11 install location", mustexist=False
-            )
+            ).replace("/", "\\")
 
             if python_path == "":
                 print(
@@ -230,13 +230,13 @@ if install_gcc is True:
     print("Updating pacman packages (required for gcc)...")
     for _ in range(2):
         # has to be ran twice
-        subprocess_run([f"'{bash_path}'", "-lc", "\"pacman --noconfirm -Syuu\""], shell=True, check=True)
+        subprocess_run([bash_path, "-lc", "\"pacman --noconfirm -Syuu\""], shell=True, check=True)
 
     print("Downloading C compilers...")
     # tell ucrt to install gcc/g++ and gdb
-    subprocess_run([f"'{bash_path}'", "-lc", "\"pacman --noconfirm -S mingw-w64-ucrt-x86_64-gcc\""], shell=True, check=True)
+    subprocess_run([bash_path, "-lc", "\"pacman --noconfirm -S mingw-w64-ucrt-x86_64-gcc\""], shell=True, check=True)
     print("Downloading gdb (C debugger)...")
-    subprocess_run([f"'{bash_path}'", "-lc", "\"pacman --noconfirm -S mingw-w64-ucrt-x86_64-gdb\""], shell=True, check=True)
+    subprocess_run([bash_path, "-lc", "\"pacman --noconfirm -S mingw-w64-ucrt-x86_64-gdb\""], shell=True, check=True)
 
     print()
     # add gcc to PATH

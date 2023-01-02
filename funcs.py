@@ -41,7 +41,6 @@ def install_app(app_id: str, *installer_args):
         winget_command.extend(installer_args)
 
     process = subprocess_run(winget_command, shell=True, check=False)
-    print(" ".join(winget_command))
 
     internet_check(process)
 
