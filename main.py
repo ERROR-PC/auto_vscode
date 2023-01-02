@@ -4,21 +4,29 @@ from tkinter import messagebox, filedialog, Tk
 from subprocess import CalledProcessError, run as subprocess_run
 import sys
 import os
+# to check for admin perms
+import ctypes
 
 from color_codes import ColorCode
 from funcs import errprint, install_app, yes_no_input
 from constants import WINGET_ID
+
+# Make sure colors works by switching to unicode characters
+subprocess_run(["chcp", "65001"], shell=True, check=True)
+
+is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
+
+if is_admin is False:
+    errprint("Run this program as Administrator")
+    errprint(f"{ColorCode.RED}Error: permission to install apps denied{ColorCode.END}\n")
+    subprocess_run(["pause"], check=False, shell=True)
+    sys.exit(0)
 
 # This line is to make tkinter functions work properly
 _temp = Tk("Le epic installer")
 _temp.iconbitmap(os.path.join("assets", "installer.ico"))
 _temp.withdraw()
 del _temp
-
-# is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
-
-# Make sure colors works by switching to unicode characters
-subprocess_run(["chcp", "65001"], shell=True, check=True)
 
 try:
     subprocess_run(["winget"], shell=True, check=True, capture_output=True)
@@ -44,7 +52,7 @@ except (CalledProcessError, FileNotFoundError):
 # check python installation
 # first assume it is in PATH
 try:
-    p = subprocess_run(["pydf", "--list"], check=True, capture_output=True, text=True)
+    p = subprocess_run(["py", "--list"], check=True, capture_output=True, text=True)
     for line in p.stdout.splitlines():
         # 5th char is the major version number
         if line[4] == "3":
@@ -53,37 +61,6 @@ try:
 
 except (CalledProcessError, FileNotFoundError):
     install_python = True
-
-# if it isn't, try finding it
-# NEEDS TESTING ----------------------------------------------------------------!!!
-if install_python:
-    try:
-        p = subprocess_run(
-            ["where", "pythonfgv"],
-            shell=True,
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        install_python = False
-
-        # check if multiple versions exist
-        py_dir = p.stdout
-        if "\n" in py_dir:
-            # multiple versions exist, exit program
-            errprint(
-                f"{ColorCode.RED}Ambiguous {ColorCode.BLUE}python {ColorCode.RED}installations found.{ColorCode.END}"
-            )
-            for directory in py_dir.splitlines():
-                errprint(directory)
-
-            errprint("\nProgram is unable to decide which one to use")
-            errprint("Aborting")
-            subprocess_run(["pause"], shell=True, check=True)
-            sys.exit(0)
-
-    except (CalledProcessError, FileNotFoundError):
-        ...
 
 # check vscode installation
 try:
@@ -179,7 +156,7 @@ if install_gcc is True:
                     done = True
 
         else:
-            gcc_path = os.path.join("c:", "msys64")
+            gcc_path = "c:\\msys64"
             done = True
 
     print(f"gcc/g++ will be installed in: {gcc_path}\n")
@@ -217,7 +194,9 @@ if install_python is True:
 # INSTALL ---------------------------------------------------
 if install_vscode is True:
     print(f"{ColorCode.WHITE2}VSCode installation begining...{ColorCode.END}")
-    install_app("Microsoft.VisualStudioCode", "--location", f"'{vscode_path}'")
+    # install_app("Microsoft.VisualStudioCode", "--location", f"\"{vscode_path}\"")
+
+    subprocess_run(["SETX", "/M", "PATH", f"%PATH%;{vscode_path}"], shell=True, check=False)
     print()
 
 if install_gcc is True:
@@ -230,17 +209,15 @@ if install_gcc is True:
     print("Updating pacman packages (required for gcc)...")
     for _ in range(2):
         # has to be ran twice
-        subprocess_run([bash_path, "-lc", "\"pacman --noconfirm -Syuu\""], shell=True, check=True)
+        subprocess_run(f'{bash_path} -lc "pacman --noconfirm -Syuu"', shell=True, check=False)
 
     print("Downloading C compilers...")
     # tell ucrt to install gcc/g++ and gdb
-    subprocess_run([bash_path, "-lc", "\"pacman --noconfirm -S mingw-w64-ucrt-x86_64-gcc\""], shell=True, check=True)
-    print("Downloading gdb (C debugger)...")
-    subprocess_run([bash_path, "-lc", "\"pacman --noconfirm -S mingw-w64-ucrt-x86_64-gdb\""], shell=True, check=True)
+    subprocess_run(f'{bash_path} -lc "pacman --noconfirm -S mingw-w64-ucrt-x86_64-gcc"', shell=True, check=False)
 
     print()
     # add gcc to PATH
-    subprocess_run(["SETX", "/M", f"\"%PATH%;{bash_path}\""], check=True, shell=True)
+    subprocess_run(["SETX", "/M", "PATH", f"\"%PATH%;{gcc_path + os.path.sep + os.path.join('usr', 'bin')}\""], check=False, shell=True)
 
 if install_python is True:
     print(f"{ColorCode.BLUE}Python installation begining...{ColorCode.END}")
@@ -258,4 +235,4 @@ if install_python is True:
 
 # END ----------------------------------------------------
 print("Program finished.")
-subprocess_run(["pause"], shell=True, check=True)
+subprocess_run(["pause"], shell=True, check=False)
