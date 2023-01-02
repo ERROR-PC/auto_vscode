@@ -148,7 +148,7 @@ if install_vscode is True:
         else:
             done = True
             vscode_path = os.path.join(
-                "%USERPROFILE%", "AppData", "Local", "Programs", "Microsoft VS Code"
+                "%LocalAppData%", "Programs", "Microsoft VS Code"
             )
 
     print(f"VScode will be installed in: {vscode_path}\n")
@@ -209,21 +209,38 @@ if install_python is True:
         else:
             done = True
             python_path = os.path.join(
-                "%USERPROFILE%", "AppData", "Local", "Programs", "Python", "Python311"
+                "%LocalAppData%", "Programs", "Python", "Python311"
             )
 
     print(f"python will be installed in: {python_path}\n")
 
 # INSTALL ---------------------------------------------------
 if install_vscode is True:
-    print(f"{ColorCode.WHITE2}Installing VSCode...{ColorCode.END}")
-    install_app("Microsoft.VisualStudioCode", "--location", f"\"{vscode_path}\"")
+    print(f"{ColorCode.WHITE2}VSCode installation begining...{ColorCode.END}")
+    install_app("Microsoft.VisualStudioCode", "--location", f"'{vscode_path}'")
     print()
 
 if install_gcc is True:
-    print(f"{ColorCode.GREEN}Begining installation of gcc/g++{ColorCode.END}")
+    print(f"{ColorCode.GREEN}gcc/g++ installation begining...{ColorCode.END}")
     install_app("MSYS2.MSYS2", "--location", gcc_path)
-    print("Now what?")
+    
+    # start ucrt64 cmds
+    bash_path = os.path.join(gcc_path, "usr", "bin", "bash.exe")
+    
+    print("Updating pacman packages (required for gcc)...")
+    for _ in range(2):
+        # has to be ran twice
+        subprocess_run([f"'{bash_path}'", "-lc", "\"pacman --noconfirm -Syuu\""], shell=True, check=True)
+
+    print("Downloading C compilers...")
+    # tell ucrt to install gcc/g++ and gdb
+    subprocess_run([f"'{bash_path}'", "-lc", "\"pacman --noconfirm -S mingw-w64-ucrt-x86_64-gcc\""], shell=True, check=True)
+    print("Downloading gdb (C debugger)...")
+    subprocess_run([f"'{bash_path}'", "-lc", "\"pacman --noconfirm -S mingw-w64-ucrt-x86_64-gdb\""], shell=True, check=True)
+
+    print()
+    # add gcc to PATH
+    subprocess_run(["SETX", "/M", f"\"%PATH%;{bash_path}\""], check=True, shell=True)
 
 if install_python is True:
     print(f"{ColorCode.BLUE}Python installation begining...{ColorCode.END}")
@@ -232,12 +249,13 @@ if install_python is True:
         "--override",
         "/passive",
         "InstallAllUsers=1",
-        f"DefaultAllUsersTargetDir=\"{python_path}\"",
+        f"DefaultAllUsersTargetDir='{python_path}'",
         "PrependPath=1",
         "AppendPath=1",
         "Include_symbols=1"
     )
     print()
 
+# END ----------------------------------------------------
 print("Program finished.")
 subprocess_run(["pause"], shell=True, check=True)

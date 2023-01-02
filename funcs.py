@@ -39,9 +39,9 @@ def install_app(app_id: str, *installer_args):
 
     if installer_args is not None:
         winget_command.extend(installer_args)
-        print(f"{winget_command = }")
 
     process = subprocess_run(winget_command, shell=True, check=False)
+    print(" ".join(winget_command))
 
     internet_check(process)
 
