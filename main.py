@@ -149,7 +149,7 @@ if install_gcc is True:
                     done = True
 
         else:
-            gcc_path = os.path.join(["c:", "msys64"])
+            gcc_path = os.path.join("c:", "msys64")
 
 # Configure location of python interpreter
 if install_python is True:
