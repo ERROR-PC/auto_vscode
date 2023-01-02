@@ -35,6 +35,7 @@ def install_app(app_id: str, *installer_args):
         "winget",
         "--accept-package-agreements",
         "--accept-source-agreements",
+        "--silent"
     ]
 
     if installer_args is not None:

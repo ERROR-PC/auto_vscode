@@ -150,6 +150,7 @@ if install_gcc is True:
 
         else:
             gcc_path = os.path.join("c:", "msys64")
+            done = True
 
 # Configure location of python interpreter
 if install_python is True:
@@ -183,7 +184,7 @@ if install_python is True:
 if install_vscode is True:
     print(f"{ColorCode.WHITE2}Installing VSCode...{ColorCode.END}")
     install_app("Microsoft.VisualStudioCode")
-    print("\n")
+    print()
 
 if install_gcc is True:
     print(f"{ColorCode.GREEN}Begining installation of gcc/g++{ColorCode.END}")
@@ -201,6 +202,7 @@ if install_python is True:
         "AppendPath=1",
         "Include_symbols=1"
     )
+    print()
 
 print("Program finished.")
 subprocess_run(["pause"], shell=True, check=True)
