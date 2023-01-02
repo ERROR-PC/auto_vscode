@@ -14,6 +14,7 @@ from spinning_cursor import SpinningCursor
 _temp = Tk("Le epic installer")
 _temp.iconbitmap(os.path.join("assets", "installer.ico"))
 _temp.withdraw()
+del _temp
 
 # is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
 
@@ -42,7 +43,7 @@ except (CalledProcessError, FileNotFoundError):
 # check python installation
 # first assume it is in PATH
 try:
-    p = subprocess_run(["py", "--list"], check=True, capture_output=True, text=True)
+    p = subprocess_run(["pydfj", "--list"], check=True, capture_output=True, text=True)
     for line in p.stdout.splitlines():
         # 5th char is the major version number
         if line[4] == "3":
@@ -57,7 +58,7 @@ except (CalledProcessError, FileNotFoundError):
 if install_python:
     try:
         p = subprocess_run(
-            ["where", "python"],
+            ["where", "pythondelkn"],
             shell=True,
             check=True,
             capture_output=True,
@@ -93,10 +94,12 @@ except (CalledProcessError, FileNotFoundError):  # vscode not installed
 # check gcc installation
 try:
     install_gcc = False
-    subprocess_run(["gccsaaad", "--version"], check=True, capture_output=True)
+    subprocess_run(["gcc", "--version"], check=True, capture_output=True)
 except (CalledProcessError, FileNotFoundError):  # gcc not installed
     install_gcc = True
 
+
+# Printing results
 if install_python or install_vscode or install_gcc:
     print("The following program(s) will be installed:")
     if install_vscode is True:
@@ -116,72 +119,57 @@ if not install_python or not install_vscode or not install_gcc:
         print(f"• {ColorCode.GREEN}gcc, g++ (C/C++ compilers){ColorCode.END}")
     if install_python is False:
         print(f"• {ColorCode.BLUE}Python 3 interpreter{ColorCode.END}")
-
 print("\n")
-if install_vscode:
-    print("Installing VSCode...")
-    install_app("Microsoft.VisualStudioCode")
-    print("\n")
 
-if install_gcc:
-    print(f"{ColorCode.GREEN}Begining installation of gcc/g++{ColorCode.END}")
+# VScode install location is fixed, can not be changed
+
+# Configure location of gcc
+if install_gcc is True:
     answer = yes_no_input(
         "Do you want to specify gcc/g++ install location",
         "3ayez te7aded gcc/g++ hynzl fen?",
     )
+
     if answer is True:
-        gcc_path = filedialog.askdirectory(
-            title="gcc/g++ install location", mustexist=False
+        done = False
+        while not done:
+            gcc_path = filedialog.askdirectory(
+                title="gcc/g++ install location", mustexist=False
+            )
+
+            if " " in gcc_path:
+                errprint(f"{ColorCode.RED}Error: spaces not allowed in gcc path{ColorCode.END}")
+            else:
+                done = True
+
+    else:
+        gcc_path = os.path.abspath(["c:", "msys64"])
+
+# Configure location of python interpreter
+if install_python is True:
+    answer = yes_no_input(
+        "Do you want to specify gcc/g++ install location",
+        "3ayez te7aded gcc/g++ hynzl fen?",
+    )
+
+    if answer is True:
+        python_path = filedialog.askdirectory(
+            title="Python 3.11 install location", mustexist=False
         )
     else:
-        gcc_path = os.path.join("c:", "msys64")
-
-    print(
-        "Checking latest version of gcc/g++ (this could take a while)...",
-        end="",
-        flush=True,
-    )
-    with SpinningCursor():
-        p = subprocess_run(
-            ["winget", "show", "--id", "MSYS2.MSYS2", "-e", "-s", "winget"],
-            check=False,
-            shell=True,
-            capture_output=True,
-            text=True,
+        python_path = os.path.abspath(
+            ["%USERPROFILE%", "AppData", "Local", "Programs", "Python", "Python311"]
         )
+        print(f"{python_path = }")
 
-    internet_check(p)
-    url_start = p.stdout.find("Download Url: ")
-    # jump to link
-    url_start += 14
+if install_vscode is True:
+    print(f"{ColorCode.WHITE2}Installing VSCode...{ColorCode.END}")
+    install_app("Microsoft.VisualStudioCode")
+    print("\n")
 
-    url_end = p.stdout.find("\n", url_start)
-    gcc_url = p.stdout[url_start:url_end]
-
-    print(
-        f"{ColorCode.GREEN}mingw64/gcc/g++ is going to be installed now{ColorCode.END}"
-    )
-    print("Installing gcc/g++...")
-    # can happen, for example: default path
-    if not os.path.exists(gcc_path):
-        os.mkdir(gcc_path)
-
-    gcc_path = os.path.join(gcc_path, gcc_url.split("/")[-1])
-    # use iwr from powershell
-    subprocess_run(
-        [
-            "pwsh",
-            "-Command",
-            "iwr",
-            gcc_url,
-            "-OutFile",
-            gcc_path,
-        ],
-        shell=True,
-        check=False,
-    )
-
-    print(f"{ColorCode.GREEN2}Success! gcc has been installed{ColorCode.END}\n")
+if install_gcc is True:
+    print(f"{ColorCode.GREEN}Begining installation of gcc/g++{ColorCode.END}")
+    install_app("MSYS2.MSYS2", installer_args=["install", "--root", gcc_path])
 
 print("Program finished.")
 subprocess_run(["pause"], shell=True, check=True)

@@ -2,6 +2,8 @@
 
 from subprocess import run as subprocess_run, CompletedProcess
 from sys import stderr, exit as sys_exit
+from typing import List
+
 from constants import WINGET_NO_INTERNET
 from color_codes import ColorCode
 
@@ -20,25 +22,28 @@ def internet_check(p: CompletedProcess):
         sys_exit(0)
 
 
-def install_app(app_id: str):
+def install_app(app_id: str, *, installer_args: List[str] = None):
     """Installs the given application"""
-    p = subprocess_run(
-        [
-            "winget",
-            "install",
-            "--id",
-            f"{app_id}",
-            "-e",
-            "-s",
-            "winget",
-            "--accept-package-agreements",
-            "--accept-source-agreements",
-        ],
-        shell=True,
-        check=False,
-    )
 
-    internet_check(p)
+    winget_command = [
+        "winget",
+        "install",
+        "--id",
+        app_id,
+        "-e",
+        "-s",
+        "winget",
+        "--accept-package-agreements",
+        "--accept-source-agreements",
+    ]
+
+    if installer_args is not None:
+        winget_command.append("--override")
+        winget_command.extend(installer_args)
+
+    process = subprocess_run(winget_command, shell=True, check=False)
+
+    internet_check(process)
 
 
 def yes_no_input(question: str, arabic_hint: str) -> bool:
