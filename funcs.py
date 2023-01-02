@@ -22,7 +22,7 @@ def internet_check(p: CompletedProcess):
         sys_exit(0)
 
 
-def install_app(app_id: str, *, installer_args: List[str] = None):
+def install_app(app_id: str, *installer_args):
     """Installs the given application"""
 
     winget_command = [
@@ -39,7 +39,10 @@ def install_app(app_id: str, *, installer_args: List[str] = None):
 
     if installer_args is not None:
         winget_command.append("--override")
-        winget_command.extend(installer_args)
+        # unpack
+        installer_args = " ".join(installer_args)
+
+        winget_command.append(installer_args)
 
     process = subprocess_run(winget_command, shell=True, check=False)
 
