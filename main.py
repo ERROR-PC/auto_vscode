@@ -18,6 +18,8 @@ del _temp
 # is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
 
 # Make sure arabic language works by switching to unicode characters
+subprocess_run(["chcp", "65001"], shell=True, check=True, capture_output=True)
+
 try:
     subprocess_run(["winget"], shell=True, check=True, capture_output=True)
 except (CalledProcessError, FileNotFoundError):
@@ -121,7 +123,35 @@ if not install_python or not install_vscode or not install_gcc:
 print("\n")
 
 # LOCATIONS CONFIG --------------------------------------------------
-# VScode install location is fixed, can not be changed
+# Configure location of VScode
+if install_vscode is True:
+    done = False
+    while not done:
+        answer = yes_no_input(
+            "Do you want to specify VScode install location",
+            "3ayez te7aded VScode hynzl fen?",
+        )
+
+        if answer is True:
+            vscode_path = filedialog.askdirectory(
+                title="VScode install location", mustexist=False
+            )
+
+            if vscode_path == "":
+                print(
+                    f"{ColorCode.RED}You have cancelled the operation, the question will be repeated{ColorCode.END}"
+                )
+                continue
+
+            done = True
+
+        else:
+            done = True
+            vscode_path = os.path.join(
+                "%USERPROFILE%", "AppData", "Local", "Programs", "Microsoft VS Code"
+            )
+
+    print(f"VScode will be installed in: {vscode_path}\n")
 
 # Configure location of gcc
 if install_gcc is True:
@@ -152,6 +182,8 @@ if install_gcc is True:
             gcc_path = os.path.join("c:", "msys64")
             done = True
 
+    print(f"gcc/g++ will be installed in: {gcc_path}\n")
+
 # Configure location of python interpreter
 if install_python is True:
     done = False
@@ -180,21 +212,24 @@ if install_python is True:
                 "%USERPROFILE%", "AppData", "Local", "Programs", "Python", "Python311"
             )
 
+    print(f"python will be installed in: {python_path}\n")
+
 # INSTALL ---------------------------------------------------
 if install_vscode is True:
     print(f"{ColorCode.WHITE2}Installing VSCode...{ColorCode.END}")
-    install_app("Microsoft.VisualStudioCode")
+    install_app("Microsoft.VisualStudioCode", "--location", f"\"{vscode_path}\"")
     print()
 
 if install_gcc is True:
     print(f"{ColorCode.GREEN}Begining installation of gcc/g++{ColorCode.END}")
-    install_app("MSYS2.MSYS2", "--root", gcc_path, "install")
+    install_app("MSYS2.MSYS2", "--loaction", gcc_path)
     print("Now what?")
 
 if install_python is True:
     print(f"{ColorCode.BLUE}Python installation begining...{ColorCode.END}")
     install_app(
         "Python.Python.3.11",
+        "--override",
         "/passive",
         "InstallAllUsers=1",
         f"DefaultAllUsersTargetDir=\"{python_path}\"",
