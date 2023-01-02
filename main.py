@@ -17,8 +17,8 @@ del _temp
 
 # is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
 
-# Make sure arabic language works by switching to unicode characters
-subprocess_run(["chcp", "65001"], shell=True, check=True, capture_output=True)
+# Make sure colors works by switching to unicode characters
+subprocess_run(["chcp", "65001"], shell=True, check=True)
 
 try:
     subprocess_run(["winget"], shell=True, check=True, capture_output=True)
@@ -222,7 +222,7 @@ if install_vscode is True:
 
 if install_gcc is True:
     print(f"{ColorCode.GREEN}Begining installation of gcc/g++{ColorCode.END}")
-    install_app("MSYS2.MSYS2", "--loaction", gcc_path)
+    install_app("MSYS2.MSYS2", "--location", gcc_path)
     print("Now what?")
 
 if install_python is True:
