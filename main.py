@@ -12,7 +12,7 @@ from funcs import errprint, install_app, yes_no_input
 from constants import WINGET_ID
 
 # Make sure colors works by switching to unicode characters
-subprocess_run(["chcp", "65001"], shell=True, check=True)
+subprocess_run(["chcp", "65001"], shell=True, check=False)
 
 is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
 
@@ -196,16 +196,19 @@ if install_vscode is True:
     print(f"{ColorCode.WHITE2}VSCode installation begining...{ColorCode.END}")
     # install_app("Microsoft.VisualStudioCode", "--location", f"\"{vscode_path}\"")
 
-    subprocess_run(["SETX", "/M", "PATH", f"%PATH%;{vscode_path}"], shell=True, check=False)
+    # will be reused whenever needed
+    path_process = subprocess_run("PATH", check=True, shell=True, capture_output=True, text=True)
+    if vscode_path not in path_process.stdout:
+        subprocess_run(["SETX", "/M", "PATH", f"%PATH%;{vscode_path}"], shell=True, check=False)
     print()
 
 if install_gcc is True:
     print(f"{ColorCode.GREEN}gcc/g++ installation begining...{ColorCode.END}")
     install_app("MSYS2.MSYS2", "--location", gcc_path)
-    
+
     # start ucrt64 cmds
     bash_path = os.path.join(gcc_path, "usr", "bin", "bash.exe")
-    
+
     print("Updating pacman packages (required for gcc)...")
     for _ in range(2):
         # has to be ran twice
@@ -217,19 +220,25 @@ if install_gcc is True:
 
     print()
     # add gcc to PATH
-    subprocess_run(["SETX", "/M", "PATH", f"\"%PATH%;{gcc_path + os.path.sep + os.path.join('usr', 'bin')}\""], check=False, shell=True)
+    usr_bin_path = gcc_path + os.path.sep + os.path.join('usr', 'bin')
+    if usr_bin_path not in path_process.stdout:
+        subprocess_run(["SETX", "/M", "PATH", f"%PATH%;{usr_bin_path}"], check=False, shell=True)
 
 if install_python is True:
     print(f"{ColorCode.BLUE}Python installation begining...{ColorCode.END}")
-    install_app(
-        "Python.Python.3.11",
-        "--override",
+    override_str = '"' + " ".join([
         "/passive",
         "InstallAllUsers=1",
         f"DefaultAllUsersTargetDir='{python_path}'",
         "PrependPath=1",
         "AppendPath=1",
         "Include_symbols=1"
+    ]) + '"'
+    print(f"{override_str = }")
+    install_app(
+        "Python.Python.3.11",
+        "--override",
+        override_str
     )
     print()
 
