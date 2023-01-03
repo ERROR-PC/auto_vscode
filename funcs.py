@@ -74,3 +74,16 @@ def yes_no_input(question: str, arabic_hint: str) -> bool:
         else:
             print(arabic_hint)
             print("Enter y for 'yes', enter n for 'n'")
+
+def install_vscode_extensions(*args):
+    """Takes vscode extension IDs, installs them"""
+    vscode_args = [
+        "code"
+    ]
+    for extension_id in args:
+        vscode_args.append("--install-extension")
+        vscode_args.append(extension_id)
+        vscode_args.append("--pre-release")
+        vscode_args.append("--force")
+
+    subprocess_run(vscode_args, check=False)
