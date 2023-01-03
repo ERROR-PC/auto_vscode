@@ -13,10 +13,10 @@ def errprint(*args, **kwargs):
     print(*args, file=stderr, **kwargs)
 
 
-def internet_check(p: CompletedProcess):
+def internet_check(process: CompletedProcess):
     """If the process failed because of an internet connection, it will tell the user"""
-    if p.returncode == WINGET_NO_INTERNET:
-        errprint(f"{ColorCode.RED}Your internet = 5ara{ColorCode.END}")
+    if process.returncode == WINGET_NO_INTERNET:
+        errprint(f"{ColorCode.RED}Error: bad internet connection{ColorCode.END}")
         errprint("Program is aborting")
         subprocess_run(["pause"], shell=True, check=True)
         sys_exit(0)
@@ -28,16 +28,15 @@ def install_app(app_id: str, *installer_args):
     winget_command = [
         "winget",
         "install",
-        "--id",
-        app_id,
+        f"--id={app_id}",
         "-e",
-        "-s",
-        "winget",
+        "-s=winget",
         "--accept-package-agreements",
         "--accept-source-agreements",
     ]
 
-    if installer_args is not None:
+    # if it is not empty
+    if installer_args:
         winget_command.extend(installer_args)
 
     process = subprocess_run(winget_command, shell=True, check=False)

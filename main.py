@@ -201,16 +201,13 @@ PATH = subprocess_run("PATH", check=False, shell=True, capture_output=True, text
 
 if install_vscode is True:
     print(f"{ColorCode.WHITE2}VSCode installation begining...{ColorCode.END}")
-    install_app("Microsoft.VisualStudioCode", "--location", f"\"{vscode_path}\"")
-
-    if vscode_path not in PATH:
-        subprocess_run(["SETX", "/M", "PATH", f"%PATH%;{vscode_path}"], shell=True, check=False)
+    install_app("Microsoft.VisualStudioCode", f"--location=\"{vscode_path}\"")
 
     print()
 
 if install_gcc is True:
     print(f"{ColorCode.GREEN}gcc/g++ installation begining...{ColorCode.END}")
-    install_app("MSYS2.MSYS2", "--location", gcc_path)
+    install_app("MSYS2.MSYS2", f"--location={gcc_path}")
 
     # start ucrt64 cmds
     bash_path = os.path.join(gcc_path, "usr", "bin", "bash.exe")
@@ -232,21 +229,19 @@ if install_gcc is True:
 
 if install_python is True:
     print(f"{ColorCode.BLUE}Python installation begining...{ColorCode.END}")
+
     # " args..."
     override_str = '"' + " ".join([
-        "InstallAllUsers=1",
         "/passive",
-        f"DefaultAllUsersTargetDir='{python_path}'",
+        "InstallAllUsers=1",
+        f"TargetDir='{python_path}'",
+        "CompileAll=1",
         "PrependPath=1",
         "AppendPath=1",
-        "Include_symbols=1"
+        "Include_symbols=1",
     ]) + '"'
     print(f"override str = {override_str}")
-    install_app(
-        "Python.Python.3.11",
-        "--override",
-        override_str
-    )
+    install_app("Python.Python.3.11", f"--override={override_str}")
     print()
 
 # END ----------------------------------------------------
