@@ -4,6 +4,7 @@ from tkinter import messagebox, filedialog, Tk
 from subprocess import CalledProcessError, run as subprocess_run
 import sys
 import os
+
 # to check for admin perms
 import ctypes
 
@@ -47,7 +48,9 @@ except (CalledProcessError, FileNotFoundError):
 # check admin permissions (needed)
 if is_admin is False:
     errprint("Run this program as Administrator")
-    errprint(f"{ColorCode.RED}Error: permission to install apps denied{ColorCode.END}\n")
+    errprint(
+        f"{ColorCode.RED}Error: permission to install apps denied, administrator permissions needed{ColorCode.END}\n"
+    )
     subprocess_run(["pause"], check=False, shell=True)
     sys.exit(0)
 
@@ -114,11 +117,11 @@ if install_vscode is True:
         )
 
         if answer is True:
-            vscode_path = filedialog.askdirectory(
+            VSCODE_PATH = filedialog.askdirectory(
                 title="VScode install location", mustexist=False
             ).replace("/", "\\")
 
-            if vscode_path == "":
+            if VSCODE_PATH == "":
                 print(
                     f"{ColorCode.RED}You have cancelled the operation, the question will be repeated{ColorCode.END}"
                 )
@@ -128,11 +131,9 @@ if install_vscode is True:
 
         else:
             done = True
-            vscode_path = os.path.join(
-                "%LocalAppData%", "Programs", "Microsoft VS Code"
-            )
+            VSCODE_PATH = None
 
-    print(f"VScode will be installed in: {vscode_path}\n")
+    print(f"VScode will be installed in: {VSCODE_PATH}\n")
 
 # Configure location of gcc
 if install_gcc is True:
@@ -147,23 +148,23 @@ if install_gcc is True:
             done = False
             # Validate no spaces
             while not done:
-                gcc_path = filedialog.askdirectory(
+                GCC_PATH = filedialog.askdirectory(
                     title="gcc/g++ install location", mustexist=False
                 ).replace("/", "\\")
 
-                if " " in gcc_path:
+                if " " in GCC_PATH:
                     errprint(
                         f"{ColorCode.RED}Error: spaces not allowed in gcc path{ColorCode.END}"
                     )
-                
+
                 else:
                     done = True
 
         else:
-            gcc_path = "c:\\msys64"
+            GCC_PATH = "c:\\msys64"
             done = True
 
-    print(f"gcc/g++ will be installed in: {gcc_path}\n")
+    print(f"gcc/g++ will be installed in: {GCC_PATH}\n")
 
 # Configure location of python interpreter
 if install_python is True:
@@ -175,11 +176,11 @@ if install_python is True:
         )
 
         if answer is True:
-            python_path = filedialog.askdirectory(
+            PYTHON_PATH = filedialog.askdirectory(
                 title="Python 3.11 install location", mustexist=False
             ).replace("/", "\\")
 
-            if python_path == "":
+            if PYTHON_PATH == "":
                 print(
                     f"{ColorCode.RED}You have cancelled the operation, the question will be repeated{ColorCode.END}"
                 )
@@ -189,59 +190,75 @@ if install_python is True:
 
         else:
             done = True
-            python_path = os.path.join(
-                "%LocalAppData%", "Programs", "Python", "Python311"
-            )
+            PYTHON_PATH = None
 
-    print(f"python will be installed in: {python_path}\n")
+    print(f"python will be installed in: {PYTHON_PATH}\n")
 
 # INSTALL ---------------------------------------------------
 # will be reused whenever needed
-PATH = subprocess_run("PATH", check=False, shell=True, capture_output=True, text=True).stdout
+PATH = subprocess_run(
+    "PATH", check=False, shell=True, capture_output=True, text=True
+).stdout
 
 if install_vscode is True:
     print(f"{ColorCode.WHITE2}VSCode installation begining...{ColorCode.END}")
-    install_app("Microsoft.VisualStudioCode", f"--location=\"{vscode_path}\"")
+    if VSCODE_PATH is None:
+        install_app("Microsoft.VisualStudioCode")
+    else:
+        install_app("Microsoft.VisualStudioCode", f'--location="{VSCODE_PATH}"')
 
     print()
 
 if install_gcc is True:
     print(f"{ColorCode.GREEN}gcc/g++ installation begining...{ColorCode.END}")
-    install_app("MSYS2.MSYS2", f"--location={gcc_path}")
+    install_app("MSYS2.MSYS2", f"--location={GCC_PATH}")
 
     # start ucrt64 cmds
-    bash_path = os.path.join(gcc_path, "usr", "bin", "bash.exe")
+    bash_path = os.path.join(GCC_PATH, "usr", "bin", "bash.exe")
 
     print("\n\nUpdating pacman packages (required for gcc)...")
     for _ in range(2):
         # has to be ran twice
-        subprocess_run(f'{bash_path} -lc "pacman -q --color=always --needed --noconfirm -Syuu"', shell=True, check=False)
+        subprocess_run(
+            f'{bash_path} -lc "pacman -q --color=always --needed --noconfirm -Syuu"',
+            shell=True,
+            check=False,
+        )
 
     print("\n\nDownloading C compilers...")
     # tell ucrt to install gcc/g++ and gdb
-    subprocess_run(f'{bash_path} -lc "pacman -q --color=always --needed --noconfirm -S mingw-w64-ucrt-x86_64-gcc"', shell=True, check=False)
+    subprocess_run(
+        f'{bash_path} -lc "pacman -q --color=always --needed --noconfirm -S mingw-w64-ucrt-x86_64-gcc"',
+        shell=True,
+        check=False,
+    )
 
     print()
     # add gcc to PATH
-    usr_bin_path = gcc_path + os.path.sep + os.path.join("ucrt64", "bin")
+    usr_bin_path = GCC_PATH + os.path.sep + os.path.join("ucrt64", "bin")
     if usr_bin_path not in PATH:
-        subprocess_run(["SETX", "/M", "PATH", f"%PATH%;{usr_bin_path}"], check=False, shell=True)
+        subprocess_run(
+            ["SETX", "/M", "PATH", f"%PATH%;{usr_bin_path}"], check=False, shell=True
+        )
 
 if install_python is True:
     print(f"{ColorCode.BLUE}Python installation begining...{ColorCode.END}")
 
     # " args..."
-    override_str = '"' + " ".join([
+    override_cmd = [
         "/passive",
         "InstallAllUsers=1",
-        f"TargetDir='{python_path}'",
         "CompileAll=1",
         "PrependPath=1",
         "AppendPath=1",
         "Include_symbols=1",
-    ]) + '"'
-    print(f"override str = {override_str}")
-    install_app("Python.Python.3.11", f"--override={override_str}")
+    ]
+
+    if PYTHON_PATH is not None:
+        override_cmd.append(f"TargetDir='{PYTHON_PATH}'")
+
+    override_cmd = '"' + " ".join(override_cmd) + '"'
+    install_app("Python.Python.3.11", f"--override={override_cmd}")
     print()
 
 # END ----------------------------------------------------
