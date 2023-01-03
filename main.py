@@ -16,11 +16,6 @@ subprocess_run(["chcp", "65001"], shell=True, check=False)
 
 is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
 
-if is_admin is False:
-    errprint("Run this program as Administrator")
-    errprint(f"{ColorCode.RED}Error: permission to install apps denied{ColorCode.END}\n")
-    subprocess_run(["pause"], check=False, shell=True)
-    sys.exit(0)
 
 # This line is to make tkinter functions work properly
 _temp = Tk("Le epic installer")
@@ -47,6 +42,13 @@ except (CalledProcessError, FileNotFoundError):
             check=True,
             shell=True,
         )
+    sys.exit(0)
+
+# check admin permissions (needed)
+if is_admin is False:
+    errprint("Run this program as Administrator")
+    errprint(f"{ColorCode.RED}Error: permission to install apps denied{ColorCode.END}\n")
+    subprocess_run(["pause"], check=False, shell=True)
     sys.exit(0)
 
 # check python installation
@@ -86,6 +88,8 @@ if install_python or install_vscode or install_gcc:
         print(f"• {ColorCode.GREEN}gcc, g++ (C/C++ compilers){ColorCode.END}")
     if install_python is True:
         print(f"• {ColorCode.BLUE}Python 3 interpreter{ColorCode.END}")
+
+print()
 
 if not install_python or not install_vscode or not install_gcc:
     print(
@@ -192,14 +196,16 @@ if install_python is True:
     print(f"python will be installed in: {python_path}\n")
 
 # INSTALL ---------------------------------------------------
+# will be reused whenever needed
+PATH = subprocess_run("PATH", check=False, shell=True, capture_output=True, text=True).stdout
+
 if install_vscode is True:
     print(f"{ColorCode.WHITE2}VSCode installation begining...{ColorCode.END}")
-    # install_app("Microsoft.VisualStudioCode", "--location", f"\"{vscode_path}\"")
+    install_app("Microsoft.VisualStudioCode", "--location", f"\"{vscode_path}\"")
 
-    # will be reused whenever needed
-    path_process = subprocess_run("PATH", check=True, shell=True, capture_output=True, text=True)
-    if vscode_path not in path_process.stdout:
+    if vscode_path not in PATH:
         subprocess_run(["SETX", "/M", "PATH", f"%PATH%;{vscode_path}"], shell=True, check=False)
+
     print()
 
 if install_gcc is True:
@@ -209,32 +215,33 @@ if install_gcc is True:
     # start ucrt64 cmds
     bash_path = os.path.join(gcc_path, "usr", "bin", "bash.exe")
 
-    print("Updating pacman packages (required for gcc)...")
+    print("\n\nUpdating pacman packages (required for gcc)...")
     for _ in range(2):
         # has to be ran twice
-        subprocess_run(f'{bash_path} -lc "pacman --noconfirm -Syuu"', shell=True, check=False)
+        subprocess_run(f'{bash_path} -lc "pacman -q --color=always --needed --noconfirm -Syuu"', shell=True, check=False)
 
-    print("Downloading C compilers...")
+    print("\n\nDownloading C compilers...")
     # tell ucrt to install gcc/g++ and gdb
-    subprocess_run(f'{bash_path} -lc "pacman --noconfirm -S mingw-w64-ucrt-x86_64-gcc"', shell=True, check=False)
+    subprocess_run(f'{bash_path} -lc "pacman -q --color=always --needed --noconfirm -S mingw-w64-ucrt-x86_64-gcc"', shell=True, check=False)
 
     print()
     # add gcc to PATH
-    usr_bin_path = gcc_path + os.path.sep + os.path.join('usr', 'bin')
-    if usr_bin_path not in path_process.stdout:
+    usr_bin_path = gcc_path + os.path.sep + os.path.join("ucrt64", "bin")
+    if usr_bin_path not in PATH:
         subprocess_run(["SETX", "/M", "PATH", f"%PATH%;{usr_bin_path}"], check=False, shell=True)
 
 if install_python is True:
     print(f"{ColorCode.BLUE}Python installation begining...{ColorCode.END}")
+    # " args..."
     override_str = '"' + " ".join([
-        "/passive",
         "InstallAllUsers=1",
+        "/passive",
         f"DefaultAllUsersTargetDir='{python_path}'",
         "PrependPath=1",
         "AppendPath=1",
         "Include_symbols=1"
     ]) + '"'
-    print(f"{override_str = }")
+    print(f"override str = {override_str}")
     install_app(
         "Python.Python.3.11",
         "--override",
