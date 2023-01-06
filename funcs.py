@@ -22,8 +22,9 @@ def internet_check(process: CompletedProcess):
         sys_exit(0)
 
 
-def install_app(app_id: str, *installer_args):
-    """Installs the given application"""
+def install_app(app_id: str, *installer_args) -> int:
+    """Installs the given application, adds installer args to winget args
+    and finally retruns returcode of subprocess"""
 
     winget_command = [
         "winget",
@@ -42,6 +43,7 @@ def install_app(app_id: str, *installer_args):
     process = subprocess_run(winget_command, shell=True, check=False)
 
     internet_check(process)
+    return process.returncode
 
 
 def yes_no_input(question: str, arabic_hint: str) -> bool:
@@ -73,17 +75,16 @@ def yes_no_input(question: str, arabic_hint: str) -> bool:
             return False
         else:
             print(arabic_hint)
-            print("Enter y for 'yes', enter n for 'n'")
+            print("Enter y for 'yes', enter n for 'no'")
 
-def install_vscode_extensions(*args):
-    """Takes vscode extension IDs, installs them"""
-    vscode_args = [
-        "code"
-    ]
-    for extension_id in args:
-        vscode_args.append("--install-extension")
-        vscode_args.append(extension_id)
-        vscode_args.append("--pre-release")
-        vscode_args.append("--force")
-
-    subprocess_run(vscode_args, check=False)
+def print_success_or_fail(program_name: str, returncode: int | None):
+    """Final output message"""
+    if returncode is None:
+        print(f"{ColorCode.YELLOW}{program_name} was already installed.{ColorCode.END}")
+    else:
+        if returncode == 0:
+            print(f"{ColorCode.GREEN}{program_name} has been installed successfully{ColorCode.END}")
+        else:
+            print(f"{ColorCode.RED}{program_name} installation failed with exit code {returncode}{ColorCode.END}")
+            with open("Errors.txt", "w") as file:
+                file.write(f"{program_name} returned {returncode}\n")

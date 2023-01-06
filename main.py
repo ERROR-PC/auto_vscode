@@ -17,7 +17,6 @@ subprocess_run(["chcp", "65001"], shell=True, check=False)
 
 is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0
 
-
 # This line is to make tkinter functions work properly
 _temp = Tk("Le epic installer")
 _temp.iconbitmap(os.path.join("assets", "installer.ico"))
@@ -56,9 +55,6 @@ if is_admin is False:
     sys.exit(0)
 
 
-
-
-
 # * Check for installed apps -------------------------------------------------------
 # check python installation
 try:
@@ -87,14 +83,11 @@ except (CalledProcessError, FileNotFoundError):  # gcc not installed
     INSTALL_GCC = True
 
 
-
-
-
 # * Printing results --------------------------------------------------------
 if INSTALL_PYTHON or INSTALL_VSCODE or INSTALL_GCC:
     print("The following program(s) will be installed:")
     if INSTALL_VSCODE is True:
-        print(f"•{ColorCode.WHITE2} Visual Studio Code (VSCode){ColorCode.END}")
+        print(f"•{ColorCode.WHITE} Visual Studio Code (VSCode){ColorCode.END}")
     if INSTALL_GCC is True:
         print(f"• {ColorCode.GREEN}gcc, g++ (C/C++ compilers){ColorCode.END}")
     if INSTALL_PYTHON is True:
@@ -107,15 +100,12 @@ if not INSTALL_PYTHON or not INSTALL_VSCODE or not INSTALL_GCC:
         "The following program(s) are already installed, no need to install them again:"
     )
     if INSTALL_VSCODE is False:
-        print(f"•{ColorCode.WHITE2} Visual Studio Code (VSCode){ColorCode.END}")
+        print(f"•{ColorCode.WHITE} Visual Studio Code (VSCode){ColorCode.END}")
     if INSTALL_GCC is False:
         print(f"• {ColorCode.GREEN}gcc, g++ (C/C++ compilers){ColorCode.END}")
     if INSTALL_PYTHON is False:
         print(f"• {ColorCode.BLUE}Python 3 interpreter{ColorCode.END}")
 print("\n")
-
-
-
 
 
 # * Questions --------------------------------------------------
@@ -145,13 +135,17 @@ if INSTALL_VSCODE is True:
             done = True
             VSCODE_PATH = None
 
-    print(f"VScode will be installed in: {VSCODE_PATH}\n")
+    if VSCODE_PATH is not None:
+        print(f"VScode will be installed in: {VSCODE_PATH}\n")
+    else:
+        print("VScode will be installed in the default location")
 
 # Ask if user wants extensions for vscode
 INSTALL_EXTS = yes_no_input(
     "Do you want to download vscode extension for C/C++ and python development - choose yes if you don't know",
     "If you don't know the answer, then choose yes",
 )
+print()
 
 # Configure location of gcc
 if INSTALL_GCC is True:
@@ -210,64 +204,61 @@ if INSTALL_PYTHON is True:
             done = True
             PYTHON_PATH = None
 
-    print(f"python will be installed in: {PYTHON_PATH}\n")
-
-
-
-
-
+    if PYTHON_PATH is not None:
+        print(f"python will be installed in: {PYTHON_PATH}\n")
+    else:
+        print("Python will be installed in the default location")
 
 
 # * Installations ---------------------------------------------------
+# Clear screen
+print("Installation is going to begin")
+subprocess_run(["pause"], shell=True, check=False)
+subprocess_run(["cls"], shell=True, check=False)
+
+# None means preinstalled
+# If it is not preinstalled, the variables will change
+vscode_returncode = None
+vscode_exts_returncode = None
+gcc_returncode = None
+gcc_path_process = None
+python_returncode = None
+
 # will be used whenever needed
 PATH = subprocess_run(
     "PATH", check=False, shell=True, capture_output=True, text=True
 ).stdout
 
 if INSTALL_VSCODE is True:
-    print(f"{ColorCode.WHITE2}VSCode installation begining...{ColorCode.END}")
+    print(f"{ColorCode.WHITE}VSCode installation begining...{ColorCode.END}")
     if VSCODE_PATH is None:
-        install_app("Microsoft.VisualStudioCode")
+        vscode_returncode = install_app("Microsoft.VisualStudioCode")
     else:
-        install_app("Microsoft.VisualStudioCode", f'--location="{VSCODE_PATH}"')
+        vscode_returncode = install_app(
+            "Microsoft.VisualStudioCode", f'--location="{VSCODE_PATH}"'
+        )
 
     print()
 
 if INSTALL_EXTS is True:
-    install_vscode_extensions(
-        # better comment highlighting
-        "aaron-bond.better-comments",
-        # C/C++ extension pack
-        "ms-vscode.cpptools-extension-pack",
-        # important C/C++ snippets
-        "hars.CppSnippets",
-        # Code runner
-        "formulahendry.code-runner",
-        # IntelliCode
-        "VisualStudioExptTeam.vscodeintellicode",
-        # IntelliCode for APIs
-        "VisualStudioExptTeam.intellicode-api-usage-examples",
-        # Python pack (pylance + Pyline + isort + jupiter + formatter + refactoring + ... a lot)
-        "donjayamanne.python-extension-pack",
-        # Python image preview (for PILLOW and such)
-        "076923.python-image-preview",
-        # todos and fixmes
-        "Gruntfuggly.todo-tree",
-        # Cool looking icons
-        "vscode-icons-team.vscode-icons",
-    )
+    # has to be ran as a seperate process
+    # because the PATH variable does not update
+    # unless you restart
+    vscode_exts_returncode = subprocess_run(
+        os.path.join("assets", "vscode_install.exe"), check=False
+    ).returncode
 
     print()
 
 
 if INSTALL_GCC is True:
     print(f"{ColorCode.GREEN}gcc/g++ installation begining...{ColorCode.END}")
-    install_app("MSYS2.MSYS2", f"--location={GCC_PATH}")
+    gcc_returncode = install_app("MSYS2.MSYS2", f"--location={GCC_PATH}")
 
     # start ucrt64 cmds
     bash_path = os.path.join(GCC_PATH, "usr", "bin", "bash.exe")
 
-    print("\n\nUpdating pacman packages (required for gcc)...")
+    print("\n\nUpdating pacman packages (requiRED for gcc)...")
     for _ in range(2):
         # has to be ran twice
         subprocess_run(
@@ -279,7 +270,13 @@ if INSTALL_GCC is True:
     print("\n\nDownloading C compilers...")
     # tell ucrt to install gcc/g++ and gdb
     subprocess_run(
-        f'{bash_path} -lc "pacman -S -q --disable-download-timeout --color=always --needed --noconfirm base-devel mingw-w64-x86_64-toolchain"',
+        f'{bash_path} -lc "pacman -S -q --disable-download-timeout --color=always --needed --noconfirm mingw-w64-x86_64-gcc"',
+        shell=True,
+        check=False,
+    )
+
+    subprocess_run(
+        f'{bash_path} -lc "pacman -S -q --disable-download-timeout --color=always --needed --noconfirm mingw-w64-x86_64-gdb"',
         shell=True,
         check=False,
     )
@@ -288,8 +285,11 @@ if INSTALL_GCC is True:
     # add gcc to PATH
     usr_bin_path = GCC_PATH + os.path.sep + os.path.join("mingw64", "bin")
     if usr_bin_path not in PATH:
-        subprocess_run(
-            ["SETX", "/M", "PATH", f"%PATH%;{usr_bin_path}"], check=False, shell=True
+        gcc_path_process = subprocess_run(
+            ["SETX", "/M", "PATH", f"%PATH%;{usr_bin_path}"],
+            check=False,
+            shell=True,
+            text=True,
         )
 
 if INSTALL_PYTHON is True:
@@ -309,9 +309,21 @@ if INSTALL_PYTHON is True:
         override_cmd.append(f"TargetDir='{PYTHON_PATH}'")
 
     override_cmd = '"' + " ".join(override_cmd) + '"'
-    install_app("Python.Python.3.11", f"--override={override_cmd}")
+    python_returncode = install_app("Python.Python.3.11", f"--override={override_cmd}")
     print()
 
 # * END ----------------------------------------------------
-print("Program finished.")
+print_success_or_fail("VScode", vscode_returncode)
+
+print_success_or_fail("VScode extensions", vscode_exts_returncode)
+
+print_success_or_fail("C compilers", gcc_returncode)
+
+if gcc_path_process.returncode != 0:
+    print(f"{ColorCode.RED}C was not added to PATH{ColorCode.END}")
+    with open("Errors.txt", "w") as file:
+        file.write(f"PATH output: {gcc_path_process.stdout}")
+        file.write(f"PATH returncode: {gcc_path_process.returncode}")
+
+print("\nProgram finished.")
 subprocess_run(["pause"], shell=True, check=False)

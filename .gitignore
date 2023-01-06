@@ -1,6 +1,6 @@
-/__pycache__
-/dist
-/build
+\__pycache__
+\dist
+\build
 auto vscode.spec
+vscode_install.spec
 test.py
-main.spec
