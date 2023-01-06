@@ -64,6 +64,8 @@ try:
         if line[4] == "3":
             INSTALL_PYTHON = False
             break
+    else:
+        INSTALL_PYTHON = True
 
 except (CalledProcessError, FileNotFoundError):
     INSTALL_PYTHON = True
@@ -244,38 +246,6 @@ if INSTALL_VSCODE is True:
 
     print()
 
-if INSTALL_EXTS is True:
-    # has to be ran as a seperate process
-    # because the PATH variable does not update
-    # unless you restart
-    vscode_exts_returncode = subprocess_run(
-        os.path.join("assets", "vscode_install.exe"), check=False
-    ).returncode
-
-    print()
-
-# Install python before gdb, this is because gdb also installs python
-# This avoids some installation errors
-if INSTALL_PYTHON is True:
-    print(f"{ColorCode.BLUE}Python installation begining...{ColorCode.END}")
-
-    # " args..."
-    override_cmd = [
-        "/passive",
-        "InstallAllUsers=1",
-        "CompileAll=1",
-        "PrependPath=1",
-        "AppendPath=1",
-        "Include_symbols=1",
-    ]
-
-    if PYTHON_PATH is not None:
-        override_cmd.append(f"TargetDir='{PYTHON_PATH}'")
-
-    override_cmd = '"' + " ".join(override_cmd) + '"'
-    python_returncode = install_app("Python.Python.3.11", f"--override={override_cmd}")
-    print()
-
 if INSTALL_GCC is True:
     print(f"{ColorCode.GREEN}gcc/g++ installation begining...{ColorCode.END}")
     gcc_returncode = install_app("MSYS2.MSYS2", f"--location={GCC_PATH}")
@@ -316,6 +286,39 @@ if INSTALL_GCC is True:
             shell=True,
             text=True,
         )
+
+    print()
+
+if INSTALL_EXTS is True:
+    # has to be ran as a seperate process
+    # because the PATH variable does not update
+    # unless you restart
+    vscode_exts_returncode = subprocess_run(
+        os.path.join("assets", "vscode_install.exe"), check=False
+    ).returncode
+
+    print()
+
+if INSTALL_PYTHON is True:
+    # TODO: get installer by hand, then run installer by hand, winget is bugged
+    print(f"{ColorCode.BLUE}Python installation begining...{ColorCode.END}")
+
+    # " args..."
+    override_cmd = [
+        "/passive",
+        "/log pythonLog.txt",
+        "InstallAllUsers=1",
+        "CompileAll=1",
+        "PrependPath=1",
+        "AppendPath=1",
+        "Include_symbols=1",
+    ]
+
+    if PYTHON_PATH is not None:
+        override_cmd.append(f"TargetDir='{PYTHON_PATH}'")
+
+    override_cmd = '"' + " ".join(override_cmd) + '"'
+    python_returncode = install_app("Python.Python.3.11", f"--override={override_cmd}")
 
     print()
 
