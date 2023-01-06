@@ -4,4 +4,4 @@
 auto vscode.spec
 vscode_install.spec
 test.py
-\assets\vscode_install.exe
+assets/vscode_install.exe
