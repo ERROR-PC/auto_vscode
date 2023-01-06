@@ -10,7 +10,7 @@ import ctypes
 
 from color_codes import ColorCode
 from funcs import *
-from constants import WINGET_ID
+from constants import WINGET_ID, WINGET_ALREADY_INSTALLED
 
 # Make sure colors works by switching to unicode characters
 subprocess_run(["chcp", "65001"], shell=True, check=False)
@@ -137,9 +137,8 @@ if INSTALL_VSCODE is True:
     if VSCODE_PATH is not None:
         print(f"VScode will be installed in: {VSCODE_PATH}\n")
     else:
-        print("VScode will be installed in the default location")
+        print("VScode will be installed in the default location\n")
 
-    print(f"VScode will be installed in: {VSCODE_PATH}\n")
 
 # Ask if user wants extensions for vscode
 INSTALL_EXTS = yes_no_input(
@@ -158,24 +157,28 @@ if INSTALL_GCC is True:
         )
 
         if answer is True:
-            done = False
-            # Validate no spaces
-            while not done:
-                GCC_PATH = filedialog.askdirectory(
-                    title="gcc/g++ install location", mustexist=False
-                ).replace("/", "\\")
+            GCC_PATH = filedialog.askdirectory(
+                title="gcc/g++ install location", mustexist=False
+            ).replace("/", "\\")
 
-                if " " in GCC_PATH:
-                    errprint(
-                        f"{ColorCode.RED}Error: spaces not allowed in gcc path{ColorCode.END}"
-                    )
+            if GCC_PATH == "":
+                print(
+                    f"{ColorCode.RED}You have cancelled the operation, the question will be repeated{ColorCode.END}"
+                )
+                continue
 
-                else:
-                    done = True
+            elif " " in GCC_PATH:
+                print(f"{ColorCode.RED}{GCC_PATH}{ColorCode.END}")
+                print(
+                    f"{ColorCode.RED}Error: spaces not allowed in gcc path{ColorCode.END}"
+                )
+                continue
+
+            done = True
 
         else:
-            GCC_PATH = "c:\\msys64"
             done = True
+            GCC_PATH = "c:\\msys64"
 
     print(f"gcc/g++ will be installed in: {GCC_PATH}\n")
 
@@ -208,12 +211,12 @@ if INSTALL_PYTHON is True:
     if PYTHON_PATH is not None:
         print(f"python will be installed in: {PYTHON_PATH}\n")
     else:
-        print("Python will be installed in the default location")
+        print("Python will be installed in the default location\n")
 
 
 # * Installations ---------------------------------------------------
 # Clear screen
-print("Installation is going to begin")
+print("Installation is going to begin, there won't be more questions or prompts")
 subprocess_run(["pause"], shell=True, check=False)
 subprocess_run(["cls"], shell=True, check=False)
 
@@ -251,6 +254,27 @@ if INSTALL_EXTS is True:
 
     print()
 
+# Install python before gdb, this is because gdb also installs python
+# This avoids some installation errors
+if INSTALL_PYTHON is True:
+    print(f"{ColorCode.BLUE}Python installation begining...{ColorCode.END}")
+
+    # " args..."
+    override_cmd = [
+        "/passive",
+        "InstallAllUsers=1",
+        "CompileAll=1",
+        "PrependPath=1",
+        "AppendPath=1",
+        "Include_symbols=1",
+    ]
+
+    if PYTHON_PATH is not None:
+        override_cmd.append(f"TargetDir='{PYTHON_PATH}'")
+
+    override_cmd = '"' + " ".join(override_cmd) + '"'
+    python_returncode = install_app("Python.Python.3.11", f"--override={override_cmd}")
+    print()
 
 if INSTALL_GCC is True:
     print(f"{ColorCode.GREEN}gcc/g++ installation begining...{ColorCode.END}")
@@ -259,7 +283,7 @@ if INSTALL_GCC is True:
     # start ucrt64 cmds
     bash_path = os.path.join(GCC_PATH, "usr", "bin", "bash.exe")
 
-    print("\n\nUpdating pacman packages (requiRED for gcc)...")
+    print("\n\nUpdating pacman packages (required for gcc)...")
     for _ in range(2):
         # has to be ran twice
         subprocess_run(
@@ -293,38 +317,28 @@ if INSTALL_GCC is True:
             text=True,
         )
 
-if INSTALL_PYTHON is True:
-    print(f"{ColorCode.BLUE}Python installation begining...{ColorCode.END}")
-
-    # " args..."
-    override_cmd = [
-        "/passive",
-        "InstallAllUsers=1",
-        "CompileAll=1",
-        "PrependPath=1",
-        "AppendPath=1",
-        "Include_symbols=1",
-    ]
-
-    if PYTHON_PATH is not None:
-        override_cmd.append(f"TargetDir='{PYTHON_PATH}'")
-
-    override_cmd = '"' + " ".join(override_cmd) + '"'
-    python_returncode = install_app("Python.Python.3.11", f"--override={override_cmd}")
     print()
 
 # * END ----------------------------------------------------
 print_success_or_fail("VScode", vscode_returncode)
 
 print_success_or_fail("VScode extensions", vscode_exts_returncode)
+if INSTALL_EXTS:
+    print("Note: if VScode extensions failed to install, try restarting the program")
 
-print_success_or_fail("C compilers", gcc_returncode)
+if gcc_returncode == WINGET_ALREADY_INSTALLED:
+    print(f"{ColorCode.YELLOW}gcc/g++ was already installed.{ColorCode.END}")
+else:
+    print_success_or_fail("C compilers", gcc_returncode)
 
-if gcc_path_process.returncode != 0:
-    print(f"{ColorCode.RED}C was not added to PATH{ColorCode.END}")
-    with open("Errors.txt", "w") as file:
-        file.write(f"PATH output: {gcc_path_process.stdout}")
-        file.write(f"PATH returncode: {gcc_path_process.returncode}")
+if gcc_path_process is not None:
+    if gcc_path_process.returncode != 0:
+        print(f"{ColorCode.RED}C was not added to PATH{ColorCode.END}")
+        with open(os.path.join("assets", "errors.txt"), "w") as file:
+            file.write(f"PATH output: {gcc_path_process.stdout}")
+            file.write(f"PATH returncode: {gcc_path_process.returncode}")
+
+print_success_or_fail("Python", python_returncode)
 
 print("\nProgram finished.")
 subprocess_run(["pause"], shell=True, check=False)

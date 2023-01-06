@@ -2,6 +2,7 @@
 
 from subprocess import run as subprocess_run, CompletedProcess
 from sys import stderr, exit as sys_exit
+import os
 from typing import List
 
 from constants import WINGET_NO_INTERNET
@@ -86,5 +87,5 @@ def print_success_or_fail(program_name: str, returncode: int | None):
             print(f"{ColorCode.GREEN}{program_name} has been installed successfully{ColorCode.END}")
         else:
             print(f"{ColorCode.RED}{program_name} installation failed with exit code {returncode}{ColorCode.END}")
-            with open("Errors.txt", "w") as file:
+            with open(os.path.join("assets", "errors.txt"), "w") as file:
                 file.write(f"{program_name} returned {returncode}\n")
