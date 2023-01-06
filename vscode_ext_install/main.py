@@ -2,7 +2,7 @@
 
 from subprocess import CalledProcessError, run as subprocess_run
 
-YELLOW = '\33[33m'
+YELLOW = '\33[93m'
 END_COLOR = '\33[0m'
 
 def install_vscode_extensions(*args):
