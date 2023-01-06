@@ -134,11 +134,12 @@ if INSTALL_VSCODE is True:
         else:
             done = True
             VSCODE_PATH = None
-
     if VSCODE_PATH is not None:
         print(f"VScode will be installed in: {VSCODE_PATH}\n")
     else:
         print("VScode will be installed in the default location")
+
+    print(f"VScode will be installed in: {VSCODE_PATH}\n")
 
 # Ask if user wants extensions for vscode
 INSTALL_EXTS = yes_no_input(
