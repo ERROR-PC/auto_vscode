@@ -17,7 +17,7 @@ def errprint(*args, **kwargs):
 def internet_check(process: CompletedProcess):
     """If the process failed because of an internet connection, it will tell the user"""
     if process.returncode == WINGET_NO_INTERNET:
-        errprint(f"{ColorCode.RED}Error: bad internet connection{ColorCode.END}")
+        errprint(f"{ColorCode.RED}Error: bad internet connection, connect to the internet then restart the program{ColorCode.END}")
         errprint("Program is aborting")
         subprocess_run(["pause"], shell=True, check=True)
         sys_exit(0)

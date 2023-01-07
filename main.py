@@ -300,13 +300,42 @@ if INSTALL_EXTS is True:
     print()
 
 if INSTALL_PYTHON is True:
-    # TODO: get installer by hand, then run installer by hand, winget is bugged
     print(f"{ColorCode.BLUE}Python installation begining...{ColorCode.END}")
 
-    # " args..."
-    override_cmd = [
+    process = subprocess_run(
+        ["winget", "show", "--id=Python.Python.3.11", "-e", "-s=winget"],
+        check=False,
+        shell=True,
+        capture_output=True,
+        text=True,
+    )
+
+    internet_check(process)
+
+    # Get url of python
+    url_start_index = process.stdout.find("Download Url: ") + 14
+    url_end_index = process.stdout.find("\n", url_start_index)
+    python_url = process.stdout[url_start_index:url_end_index]
+    # Get installer name (last part of url)
+    python_installer_name = python_url.split("/")[-1]
+
+    # Download installer manually
+    subprocess_run(
+        [
+            "powershell",
+            "iwr",
+            python_url,
+            "-OutFile",
+            '"' + os.path.join("%temp%", python_installer_name) + '"',
+        ],
+        check=False,
+        shell=True,
+    )
+
+    # prepare args for python installer
+    python_args = [
+        os.path.join("%temp%", python_installer_name),
         "/passive",
-        "/log pythonLog.txt",
         "InstallAllUsers=1",
         "CompileAll=1",
         "PrependPath=1",
@@ -315,10 +344,10 @@ if INSTALL_PYTHON is True:
     ]
 
     if PYTHON_PATH is not None:
-        override_cmd.append(f"TargetDir='{PYTHON_PATH}'")
+        python_args.append(f"TargetDir=\"{PYTHON_PATH}\"")
 
-    override_cmd = '"' + " ".join(override_cmd) + '"'
-    python_returncode = install_app("Python.Python.3.11", f"--override={override_cmd}")
+    print(f"Python args = {python_args}")
+    python_returncode = subprocess_run(python_args, check=False, shell=True).returncode
 
     print()
 
