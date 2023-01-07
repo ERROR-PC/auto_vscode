@@ -344,9 +344,10 @@ if INSTALL_PYTHON is True:
     ]
 
     if PYTHON_PATH is not None:
-        python_args.append(f"TargetDir=\"{PYTHON_PATH}\"")
+        python_args.append(f'TargetDir="{PYTHON_PATH}"')
 
-    print(f"Python args = {python_args}")
+    python_args = " ".join(python_args)
+
     python_returncode = subprocess_run(python_args, check=False, shell=True).returncode
 
     print()
